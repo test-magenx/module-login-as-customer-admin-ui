@@ -13,6 +13,7 @@ use Magento\Backend\Model\Auth\Session;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Customer\Model\Config\Share;
+use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Controller\Result\Json as JsonResult;
 use Magento\Framework\Controller\ResultFactory;
@@ -199,7 +200,7 @@ class Login extends Action implements HttpPostActionInterface
         if ($this->config->isStoreManualChoiceEnabled()) {
             $storeId = (int)$this->_request->getParam('store_id');
             if (empty($storeId)) {
-                $messages[] = __('Please select a Store to login in.');
+                $messages[] = __('Please select a Store View to login in.');
                 return $this->prepareJsonResult($messages);
             }
         } elseif ($this->share->isGlobalScope()) {
@@ -246,9 +247,9 @@ class Login extends Action implements HttpPostActionInterface
             ->setScope($targetStore)
             ->getUrl('loginascustomer/login/index', ['_query' => $queryParameters, '_nosid' => true]);
 
-        $defaultStore = $this->storeManager->getDefaultStoreView();
-        if ($targetStore->getBaseUrl() === $defaultStore->getBaseUrl()) {
-            $redirectUrl = $this->manageStoreCookie->switch($defaultStore, $targetStore, $redirectUrl);
+        if (!$targetStore->isUseStoreInUrl()) {
+            $fromStore = $this->storeManager->getStore();
+            $redirectUrl = $this->manageStoreCookie->switch($fromStore, $targetStore, $redirectUrl);
         }
 
         return $redirectUrl;
